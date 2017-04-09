@@ -1,4 +1,4 @@
-package com.scheidegger.jegplayer;
+package com.scheidegger.jegplayer.model;
 
 public class JegMusic {
 

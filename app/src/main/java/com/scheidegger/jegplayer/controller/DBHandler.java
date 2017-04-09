@@ -1,4 +1,4 @@
-package com.scheidegger.jegplayer;
+package com.scheidegger.jegplayer.controller;
 
 import android.content.ContentValues;
 import android.content.Context;
@@ -6,6 +6,8 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
+
+import com.scheidegger.jegplayer.model.JegMusic;
 
 import java.util.ArrayList;
 import java.util.List;

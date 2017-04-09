@@ -8,10 +8,14 @@ import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.scheidegger.jegplayer.controller.DBHandler;
+import com.scheidegger.jegplayer.controller.MusicItemListAdapter;
+import com.scheidegger.jegplayer.model.JegMusic;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -23,9 +27,9 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
     private ListView lstSongs;
     private TextView txtMusicName;
-    private Button btnPlayPause;
+    private ImageButton btnPlayPause;
     private MediaPlayer mediaPlayer = new MediaPlayer();
-    private List<String> songList;
+    private List<JegMusic> songList;
     private DBHandler db;
 
     @Override
@@ -35,65 +39,77 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         setContentView(R.layout.activity_main);
 
         lstSongs = (ListView) this.findViewById(R.id.lst_songs);
+        generateSongList();
         addSongsToList();
         lstSongs.setOnItemClickListener(this);
 
-        btnPlayPause = (Button) this.findViewById(R.id.btn_play_pause);
+        btnPlayPause = (ImageButton) this.findViewById(R.id.btn_play_pause);
         btnPlayPause.setOnClickListener(this);
 
         this.findViewById(R.id.btn_previous).setOnClickListener(this);
         this.findViewById(R.id.btn_stop).setOnClickListener(this);
         this.findViewById(R.id.btn_next).setOnClickListener(this);
 
-        txtMusicName = (TextView) this.findViewById(R.id.music_name);
+        txtMusicName = (TextView) this.findViewById(R.id.cur_music_name);
 
         db = new DBHandler(this);
         addRecordsToDB();
 
     }
 
-    private void addRecordsToDB() {
-        db.addMusic(new JegMusic(0,"bensoundbrazilsamba","bensoundbrazilsamba.mp3","Brazil",240,
+    private void generateSongList() {
+        songList = new ArrayList<>();
+
+        songList.add(new JegMusic(0,"bensoundbrazilsamba","bensoundbrazilsamba.mp3","Brazil",240,
                 "Samba is a Brazilian musical genre and dance style, with its roots in Africa " +
-                "via the West African slave trade and African religious traditions, " +
-                "particularly of Angola"));
-        db.addMusic(new JegMusic(0,"bensoundcountryboy","bensoundcountryboy.mp3","USA",207,
+                        "via the West African slave trade and African religious traditions, " +
+                        "particularly of Angola"));
+        songList.add(new JegMusic(0,"bensoundcountryboy","bensoundcountryboy.mp3","USA",207,
                 "Country music is a genre of American popular music that originated in the " +
-                "Southern United States in the 1920s"));
-        db.addMusic(new JegMusic(0,"bensoundindia","bensoundindia.mp3","India",253,
+                        "Southern United States in the 1920s"));
+        songList.add(new JegMusic(0,"bensoundindia","bensoundindia.mp3","India",253,
                 "The music of India includes multiple varieties of folk music, pop, and Indian " +
-                "classical music. India's classical music tradition, including Hindustani music " +
-                " and Carnatic, has a history spanning millennia and developed over several eras"));
-        db.addMusic(new JegMusic(0,"bensoundlittleplanet","bensoundlittleplanet.mp3","Iceland",396,
-                "The music of Iceland includes vibrant folk and pop traditions. Well-known " +
-                "artists from Iceland include medieval music group Voces Thules, alternative " +
-                "rock band The Sugarcubes, singers Björk and Emiliana Torrini, postrock band " +
-                "Sigur Rós and indie folk/indie pop band Of Monsters and Men"));
-        db.addMusic(new JegMusic(0,"bensoundpsychdelic","bensoundpsychdelic.mp3","South Korea",236,
+                        "classical music. India's classical music tradition, including " +
+                        "Hindustani music and Carnatic, has a history spanning millennia and " +
+                        "developed over several eras"));
+        songList.add(new JegMusic(0,"bensoundlittleplanet","bensoundlittleplanet.mp3","Iceland",
+                396, "The music of Iceland includes vibrant folk and pop traditions. Well-known " +
+                        "artists from Iceland include medieval music group Voces Thules, " +
+                        "alternative rock band The Sugarcubes, singers Björk and Emiliana " +
+                        "Torrini, postrock band Sigur Rós and indie folk/indie pop band Of " +
+                        "Monsters and Men"));
+        songList.add(new JegMusic(0,"bensoundpsychdelic","bensoundpsychdelic.mp3","South Korea",236,
                 "The Music of South Korea has evolved over the course of the decades since the " +
-                "end of the Korean War, and has its roots in the music of the Korean people, who " +
-                "have inhabited the Korean peninsula for over a millennium. Contemporary South " +
-                "Korean music can be divided into three different main categories: Traditional " +
-                "Korean folk music, popular music, or Kpop, and Westerninfluenced non-popular " +
-                "music"));
-        db.addMusic(new JegMusic(0,"bensoundrelaxing","bensoundrelaxing.mp3","Indonesia",288,
+                        "end of the Korean War, and has its roots in the music of the Korean " +
+                        "people, who have inhabited the Korean peninsula for over a millennium. " +
+                        "Contemporary South Korean music can be divided into three different " +
+                        "main categories: Traditional Korean folk music, popular music, or " +
+                        "Kpop, and Westerninfluenced non-popular music"));
+        songList.add(new JegMusic(0,"bensoundrelaxing","bensoundrelaxing.mp3","Indonesia",288,
                 "The music of Indonesia demonstrates its cultural diversity, the local musical " +
-                "creativity, as well as subsequent foreign musical influences that shaped " +
-                "contemporary music scenes of Indonesia. Nearly thousands of Indonesian islands " +
-                "having its own cultural and artistic history and character"));
-        db.addMusic(new JegMusic(0,"bensoundtheelavatorbossanova",
+                        "creativity, as well as subsequent foreign musical influences that shaped " +
+                        "contemporary music scenes of Indonesia. Nearly thousands of Indonesian islands " +
+                        "having its own cultural and artistic history and character"));
+        songList.add(new JegMusic(0,"bensoundtheelavatorbossanova",
                 "bensoundtheelavatorbossanova.mp3","Brazil",254,
                 "Samba is a Brazilian musical genre and dance style, with its roots in Africa " +
-                "via the West African slave trade and African religious traditions, " +
-                 "particularly of Angola"));
-        //songList
+                        "via the West African slave trade and African religious traditions, " +
+                        "particularly of Angola"));
+    }
+
+    private void addRecordsToDB() {
+
+        for (JegMusic music : songList) {
+            db.addMusic(music);
+        }
     }
 
     private void addSongsToList() {
         //Get the list of songs
         Log.i(TAG, "in addSongsToList()");
-        songList = new ArrayList<>();
 
+        //TODO : Compare list against DB
+        /*
         Field[] fields = R.raw.class.getFields();
         for(int count=0; count < fields.length; count++){
             Field curField = fields[count];
@@ -102,9 +118,9 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             Log.i("Raw Asset: ", fileName);
             songList.add(fileName);
         }
+        */
 
-        ArrayAdapter<String> sngListAdapter = new ArrayAdapter<>(this, R.layout.song_list_item, songList);
-
+        MusicItemListAdapter sngListAdapter = new MusicItemListAdapter(songList, getApplicationContext());
         lstSongs.setAdapter(sngListAdapter);
 
     }
@@ -112,8 +128,8 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     @Override
     public void onItemClick(AdapterView<?> parent, View clickedView, int position, long id) {
         Log.i(TAG, "in onItemClick()");
-        TextView textView = (TextView) clickedView;
-        String musicName = textView.getText().toString();
+        JegMusic music = songList.get(position);
+        String musicName = music.getName();
 
         /*
         String message = "You clicked position " + position + " which is id: " + id + " and String " + musicName;
@@ -135,7 +151,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         mediaPlayer = MediaPlayer.create(this, soundId);
         Log.i(TAG, "Playing song " + soundId);
         mediaPlayer.start();
-        btnPlayPause.setText("Pause");
+        btnPlayPause.setImageResource(R.drawable.control_pause);
 
     }
 
@@ -149,11 +165,11 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                 if (mediaPlayer!=null) {
                     if(mediaPlayer.isPlaying()){
                         mediaPlayer.pause();
-                        btnPlayPause.setText("Play");
+                        btnPlayPause.setImageResource(R.drawable.control_play);
                     } else {
                         Log.i(TAG,"Not Playing");
                         mediaPlayer.start();
-                        btnPlayPause.setText("Pause");
+                        btnPlayPause.setImageResource(R.drawable.control_pause);
                     }
                 } else {
                     String musicName = txtMusicName.getText().toString();
@@ -171,7 +187,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                     mediaPlayer.stop();
                     mediaPlayer.release();
                     mediaPlayer = null;
-                    btnPlayPause.setText("Play");
+                    btnPlayPause.setImageResource(R.drawable.control_play);
                 }
                 break;
 
