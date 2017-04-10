@@ -45,6 +45,7 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
     public static final int MSG_CHECK_PLAYER_STATE = 8;
     public static final int MSG_UPDATE_ELAPSED_TIME = 9;
     public static final int MSG_PLAY_MUSIC_BY_JEG_MUSIC = 10;
+    public static final int MSG_UPDATE_SONG_NAME = 1;
 
     public static final int PLAYER_ST_PLAYING = 0;
     public static final int PLAYER_ST_PAUSED = 1;
@@ -142,6 +143,8 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
             try {
                 // Send data as an Integer
                 mClients.get(i).send(Message.obtain(null, MSG_UPDATE_ELAPSED_TIME, currentDuration, totalDuration));
+                mClients.get(i).send(Message.obtain(null, MSG_UPDATE_PLAYER_STATUS, PLAYER_ST_PLAYING, totalDuration));
+                mClients.get(i).send(Message.obtain(null, MSG_UPDATE_SONG_NAME, currentMusic.getName()));
             }
             catch (RemoteException e) {
                 // The client is dead. Remove it from the list; we are going through the list from back to front so this is safe to do inside the loop.
