@@ -1,6 +1,8 @@
 package com.scheidegger.jegplayer.model;
 
-public class JegMusic {
+import java.util.Comparator;
+
+public class JegMusic implements Comparator<JegMusic>, Comparable<JegMusic>{
 
     private int id;
     private String name;
@@ -8,6 +10,7 @@ public class JegMusic {
     private String country;
     private int length;
     private String description;
+    private int resId;
 
     public JegMusic(int id, String name, String fileName, String country, int length, String description) {
         this.id = id;
@@ -64,5 +67,19 @@ public class JegMusic {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public int getResId() { return resId; }
+
+    public void setResId(int resId) { this.resId = resId; }
+
+    @Override
+    public int compare(JegMusic o1, JegMusic o2) {
+        return o1.getFileName().compareTo(o2.getFileName());
+    }
+
+    @Override
+    public int compareTo(JegMusic o) {
+        return this.getFileName().compareTo(o.getFileName());
     }
 }

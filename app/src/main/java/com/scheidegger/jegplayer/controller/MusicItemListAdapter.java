@@ -66,8 +66,18 @@ public class MusicItemListAdapter extends ArrayAdapter<JegMusic> {
         viewHolder.txtCountry.setText(music.getCountry());
         int duration = music.getLength();
         viewHolder.txtDuration.setText(String.format("%d:%02d", duration / 60, duration % 60));
+
+        viewHolder.flag.setImageResource(getFlagResIdByCountryName(music.getCountry()));
+        //viewHolder.flag.setOnClickListener(this);
+        //viewHolder.info.setTag(position);
+
+        // Return the completed view to render on screen
+        return convertView;
+    }
+
+    public static int getFlagResIdByCountryName(String countryName) {
         int flagResId;
-        switch (music.getCountry()) {
+        switch (countryName) {
             case "Brazil" :
                 flagResId = R.drawable.flag_brazil;
                 break;
@@ -90,11 +100,6 @@ public class MusicItemListAdapter extends ArrayAdapter<JegMusic> {
                 flagResId = 0;
                 break;
         }
-        viewHolder.flag.setImageResource(flagResId);
-        //viewHolder.flag.setOnClickListener(this);
-        //viewHolder.info.setTag(position);
-
-        // Return the completed view to render on screen
-        return convertView;
+        return flagResId;
     }
 }
