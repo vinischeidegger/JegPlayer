@@ -8,8 +8,8 @@
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
-    android:orientation="vertical"
-    tools:context="com.scheidegger.jegplayer.view.MainActivity">
+    tools:context="com.scheidegger.jegplayer.view.MainActivity"
+    android:orientation="vertical">
 
     <TextView
         android:layout_width="wrap_content"
@@ -20,16 +20,27 @@
     <ListView
         android:id="@+id/lst_songs"
         android:layout_width="match_parent"
-        android:layout_height="300dp" />
+        android:layout_height="250dp" />
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/dummy_music_name"
-        android:layout_marginTop="20dp"
-        android:textColor="@android:color/black"
-        android:id="@+id/cur_music_name" />
-
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:orientation="vertical">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/dummy_music_name"
+            android:layout_marginTop="5dp"
+            android:textColor="@android:color/black"
+            android:id="@+id/cur_music_name" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/dummy_music_elapsed"
+            android:textColor="@android:color/black"
+            android:layout_marginTop="5dp"
+            android:id="@+id/cur_music_elapsed" />
+    </LinearLayout>
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"

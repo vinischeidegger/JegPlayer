@@ -1,25 +1,28 @@
 package com.scheidegger.jegplayer.view;
 
-import android.app.NotificationManager;
-import android.app.PendingIntent;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.media.MediaPlayer;
+import android.content.ServiceConnection;
+import android.os.Handler;
+import android.os.IBinder;
+import android.os.Message;
+import android.os.Messenger;
+import android.os.RemoteException;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.support.v7.app.NotificationCompat;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ImageButton;
 import android.widget.ListView;
-import android.widget.RemoteViews;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.scheidegger.jegplayer.R;
 import com.scheidegger.jegplayer.controller.DBHandler;
 import com.scheidegger.jegplayer.controller.MusicItemListAdapter;
+import com.scheidegger.jegplayer.service.PlayerService;
 import com.scheidegger.jegplayer.model.JegMusic;
 
 import java.lang.reflect.Field;
@@ -35,10 +38,15 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
     private ListView lstSongs;
     private TextView txtMusicName;
+    private TextView txtElapsed;
     private ImageButton btnPlayPause;
-    private MediaPlayer mediaPlayer = new MediaPlayer();
+    private Messenger mService;
+    final Messenger mMessenger = new Messenger(new JegPlayerMessageHandler());
     private HashMap<String, JegMusic> songList;
     private DBHandler db;
+    private boolean mIsPlayerServiceRunning;
+    private boolean isPlaying;
+    private boolean mIsBound;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,10 +68,115 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
         txtMusicName = (TextView) this.findViewById(R.id.cur_music_name);
         txtMusicName.setText("");
+        txtElapsed = (TextView) this.findViewById(R.id.cur_music_elapsed);
+        txtElapsed.setText("");
 
         db = new DBHandler(this);
         addRecordsToDB();
 
+        restoreFromBundle(savedInstanceState);
+
+        startPlayerService();
+
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        Log.i(TAG, "in On-Save-Instance");
+        super.onSaveInstanceState(outState);
+        outState.putString("musicName", txtMusicName.getText().toString());
+        outState.putBoolean("playing", isPlaying);
+    }
+
+    private void restoreFromBundle(Bundle savedState) {
+        Log.i(TAG, "in Restore-From-Bundle");
+        if (savedState!=null) {
+            txtMusicName.setText(savedState.getString("musicName"));
+            isPlaying = savedState.getBoolean("playing");
+            setPlayPauseImage(isPlaying);
+        }
+    }
+
+    private void startPlayerService() {
+        Log.i(TAG, "Starting Player Service");
+
+        startService(new Intent(this, PlayerService.class));
+
+        doBindService();
+        mIsPlayerServiceRunning = true;
+    }
+
+    private ServiceConnection mConnection = new ServiceConnection() {
+        public void onServiceConnected(ComponentName className, IBinder service) {
+            mService = new Messenger(service);
+            Log.i(TAG, "Service Attached");
+            try {
+                Message msg = Message.obtain(null, PlayerService.MSG_CLIENT_REGISTER);
+                msg.replyTo = mMessenger;
+                mService.send(msg);
+            }
+            catch (RemoteException e) {
+                // In this case the service has crashed before we could even do anything with it
+            }
+        }
+
+        public void onServiceDisconnected(ComponentName className) {
+            // This is called when the connection with the service has been unexpectedly disconnected - process crashed.
+            mService = null;
+            Toast.makeText(getApplicationContext(), "Service Disconnected.", Toast.LENGTH_SHORT).show();
+        }
+    };
+
+    private void sendMessageToService(int messageId, int arg) {
+        if(mIsPlayerServiceRunning) {
+            if(mService != null) {
+                try {
+                    Message msg = Message.obtain(null, messageId, arg, -1);
+                    msg.replyTo = mMessenger;
+                    mService.send(msg);
+                }
+                catch (RemoteException e) {
+                }
+            }
+        }
+    }
+
+    private void playMusicFromService(int resId){
+        sendMessageToService(PlayerService.MSG_PLAY_MUSIC_BY_RES_ID, resId);
+    }
+
+    private void playMusicFromService(JegMusic jegMusic) {
+        if(mIsPlayerServiceRunning) {
+            if(mService != null) {
+                try {
+                    Message msg = Message.obtain(null, PlayerService.MSG_PLAY_MUSIC_BY_JEG_MUSIC, jegMusic);
+                    msg.replyTo = mMessenger;
+                    mService.send(msg);
+                }
+                catch (RemoteException e) {
+                }
+            }
+        }
+    }
+
+    private void stopMusicFromService() {
+        sendMessageToService(PlayerService.MSG_STOP_MUSIC, -1);
+    }
+
+    private void toggleFromMusicService() {
+        sendMessageToService(PlayerService.MSG_TOGGLE_MUSIC, -1);
+    }
+
+    private void pauseMusicFromService() {
+        sendMessageToService(PlayerService.MSG_PAUSE_MUSIC, -1);
+    }
+
+    private void continueMusicFromService() {
+        sendMessageToService(PlayerService.MSG_PLAY_MUSIC, -1);
+    }
+
+    private void stopPlayerService() {
+        stopService(new Intent(getBaseContext(), PlayerService.class));
     }
 
     private List<JegMusic> getSortedSongList(Map<String, JegMusic> map) {
@@ -76,29 +189,29 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         songList = new HashMap<>();
 
         songList.put("bensoundbrazilsamba",
-                new JegMusic(0,"bensoundbrazilsamba","bensoundbrazilsamba.mp3","Brazil",240,
+                new JegMusic(0,"bensoundbrazilsamba","bensoundbrazilsamba.mp3","Brazil",240000,
                 "Samba is a Brazilian musical genre and dance style, with its roots in Africa " +
                         "via the West African slave trade and African religious traditions, " +
                         "particularly of Angola"));
         songList.put("bensoundcountryboy",
-                new JegMusic(0,"bensoundcountryboy","bensoundcountryboy.mp3","USA",207,
+                new JegMusic(0,"bensoundcountryboy","bensoundcountryboy.mp3","USA",207000,
                 "Country music is a genre of American popular music that originated in the " +
                         "Southern United States in the 1920s"));
         songList.put("bensoundindia",
-                new JegMusic(0,"bensoundindia","bensoundindia.mp3","India",253,
+                new JegMusic(0,"bensoundindia","bensoundindia.mp3","India",253000,
                 "The music of India includes multiple varieties of folk music, pop, and Indian " +
                         "classical music. India's classical music tradition, including " +
                         "Hindustani music and Carnatic, has a history spanning millennia and " +
                         "developed over several eras"));
         songList.put("bensoundlittleplanet",
-                new JegMusic(0,"bensoundlittleplanet","bensoundlittleplanet.mp3","Iceland",
-                396, "The music of Iceland includes vibrant folk and pop traditions. Well-known " +
+                new JegMusic(0,"bensoundlittleplanet","bensoundlittleplanet.mp3","Iceland",396000,
+                        "The music of Iceland includes vibrant folk and pop traditions. Well-known " +
                         "artists from Iceland include medieval music group Voces Thules, " +
                         "alternative rock band The Sugarcubes, singers Björk and Emiliana " +
                         "Torrini, postrock band Sigur Rós and indie folk/indie pop band Of " +
                         "Monsters and Men"));
         songList.put("bensoundpsychedelic",
-                new JegMusic(0,"bensoundpsychedelic","bensoundpsychedelic.mp3","South Korea",236,
+                new JegMusic(0,"bensoundpsychedelic","bensoundpsychedelic.mp3","South Korea",236000,
                 "The Music of South Korea has evolved over the course of the decades since the " +
                         "end of the Korean War, and has its roots in the music of the Korean " +
                         "people, who have inhabited the Korean peninsula for over a millennium. " +
@@ -106,14 +219,14 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                         "main categories: Traditional Korean folk music, popular music, or " +
                         "Kpop, and Westerninfluenced non-popular music"));
         songList.put("bensoundrelaxing",
-                new JegMusic(0,"bensoundrelaxing","bensoundrelaxing.mp3","Indonesia",288,
+                new JegMusic(0,"bensoundrelaxing","bensoundrelaxing.mp3","Indonesia",288000,
                 "The music of Indonesia demonstrates its cultural diversity, the local musical " +
                         "creativity, as well as subsequent foreign musical influences that shaped " +
                         "contemporary music scenes of Indonesia. Nearly thousands of Indonesian islands " +
                         "having its own cultural and artistic history and character"));
         songList.put("bensoundtheelevatorbossanova",
                 new JegMusic(0,"bensoundtheelevatorbossanova",
-                "bensoundtheelevatorbossanova.mp3","Brazil",254,
+                "bensoundtheelevatorbossanova.mp3","Brazil",254000,
                 "Samba is a Brazilian musical genre and dance style, with its roots in Africa " +
                         "via the West African slave trade and African religious traditions, " +
                         "particularly of Angola"));
@@ -151,41 +264,24 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         JegMusic music = getSortedSongList(songList).get(position);
         String musicName = music.getName();
 
-        /*
-        String message = "You clicked position " + position + " which is id: " + id + " and String " + musicName;
-        Toast.makeText(this, message, Toast.LENGTH_LONG).show();
-        */
-
         playMusic(musicName);
     }
 
     public void playMusic(String musicName){
         Log.i(TAG, "On Play Music");
-
         txtMusicName.setText(musicName);
 
         int soundId = songList.get(musicName).getResId();
-        if (mediaPlayer != null) {
-            mediaPlayer.reset();
-            mediaPlayer.release();
-        }
-        mediaPlayer = MediaPlayer.create(this, soundId);
-        Log.i(TAG, "Playing song " + soundId);
-        mediaPlayer.start();
+
+        playMusicFromService(soundId);
+        playMusicFromService(songList.get(musicName));
         btnPlayPause.setImageResource(R.drawable.control_pause);
-        CustomNotification(songList.get(musicName));
 
     }
 
     public void stopMusic() {
-        mediaPlayer.stop();
-        mediaPlayer.release();
-        mediaPlayer = null;
+        stopMusicFromService();
         btnPlayPause.setImageResource(R.drawable.control_play);
-
-        NotificationManager manager = (NotificationManager) getBaseContext().getSystemService(Context.NOTIFICATION_SERVICE);
-        manager.cancel(0);
-
     }
 
     @Override
@@ -195,30 +291,12 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         switch (clickedView.getId()) {
             // Play + Pause
             case R.id.btn_play_pause :
-                if (mediaPlayer!=null) {
-                    if(mediaPlayer.isPlaying()){
-                        mediaPlayer.pause();
-                        btnPlayPause.setImageResource(R.drawable.control_play);
-                    } else {
-                        Log.i(TAG,"Not Playing");
-                        mediaPlayer.start();
-                        btnPlayPause.setImageResource(R.drawable.control_pause);
-                    }
-                } else {
-                    musicName = txtMusicName.getText().toString();
-                    if(musicName.equals("")){
-                        Toast.makeText(this, "No music selected!", Toast.LENGTH_SHORT).show();
-                    } else {
-                        playMusic(musicName);
-                    }
-                }
+                toggleFromMusicService();
                 break;
 
             // Stop
             case R.id.btn_stop :
-                if (mediaPlayer!=null) {
-                    stopMusic();
-                }
+                stopMusic();
                 break;
 
             case R.id.btn_previous :
@@ -250,59 +328,79 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         Log.i(TAG, "in On-Destroy");
         if (isFinishing()) {
             Log.i(TAG, "Finishing activity");
-            stopMusic();
+            //stopMusic();
+            doUnbindService();
         } else {
             Log.i(TAG, "Not finishing");
         }
     }
 
-    public void CustomNotification(JegMusic music) {
-        // Using RemoteViews to bind custom layouts into Notification
-        RemoteViews remoteViews = new RemoteViews(getPackageName(),
-                R.layout.musicnotification);
+    void doBindService() {
+        bindService(new Intent(this, PlayerService.class), mConnection, Context.BIND_AUTO_CREATE);
+        mIsBound = true;
+    }
+    void doUnbindService() {
+        if (mIsBound) {
+            // If we have received the service, and hence registered with it, then now is the time to unregister.
+            if (mService != null) {
+                try {
+                    Message msg = Message.obtain(null, PlayerService.MSG_CLIENT_UNREGISTER);
+                    msg.replyTo = mMessenger;
+                    mService.send(msg);
+                }
+                catch (RemoteException e) {
+                    // There is nothing special we need to do if the service has crashed.
+                }
+            }
+            // Detach our existing connection.
+            unbindService(mConnection);
+            mIsBound = false;
+        }
+    }
 
-        // Set Notification Title
-        String strSongTitle = music.getName();
-        // Set Notification Text
-        String strCountry = music.getCountry();
+    private class JegPlayerMessageHandler extends Handler {
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case PlayerService.MSG_UPDATE_PLAYER_STATUS:
+                    updatePlayerStatus(msg.arg1);
+                    break;
+                /*case MyService.MSG_SET_STRING_VALUE:
+                    String str1 = msg.getData().getString("str1");
+                    textStrValue.setText("Str Message: " + str1);
+                    break;*/
+                case PlayerService.MSG_UPDATE_ELAPSED_TIME:
+                    updateElapsed(msg.arg1, msg.arg2);
+                    break;
+                default:
+                    super.handleMessage(msg);
+            }
+        }
+    }
 
-        // Open NotificationView Class on Notification Click
-        Intent intent = new Intent(this, MusicNotificationView.class);
-        // Send data to NotificationView Class
-        intent.putExtra("title", strSongTitle);
-        intent.putExtra("text", strCountry);
+    private void updateElapsed(int curElapsed, int totalDuration) {
+        curElapsed = (curElapsed>0?curElapsed:0);
+        txtElapsed.setText(String.format("%d:%02d", curElapsed / 60000, (curElapsed % 60000) / 1000));
+    }
 
+    private void updatePlayerStatus(int playerStatus) {
+        switch (playerStatus){
+            case PlayerService.PLAYER_ST_PAUSED:
+            case PlayerService.PLAYER_ST_STOPPED:
+                isPlaying = false;
+                break;
+            case PlayerService.PLAYER_ST_PLAYING:
+                isPlaying = true;
+                break;
+        }
+        setPlayPauseImage(isPlaying);
+    }
 
-        // Open NotificationView.java Activity
-        PendingIntent pIntent = PendingIntent.getActivity(this, 0, intent,
-                PendingIntent.FLAG_UPDATE_CURRENT);
-
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this);
-                // Set Icon
-        builder.setSmallIcon(R.mipmap.ic_launcher)
-                // Set Ticker Message
-                .setTicker("Jeg Player")
-                // Dismiss Notification
-                .setAutoCancel(false)
-                // Set PendingIntent into Notification
-                .setContentIntent(pIntent)
-                .setOngoing(true)
-                // Set RemoteViews into Notification
-                .setContent(remoteViews);
-
-        // Locate and set the Image into customnotificationtext.xml ImageViews
-        remoteViews.setImageViewResource(R.id.imagenotileft,R.mipmap.ic_launcher);
-        remoteViews.setImageViewResource(R.id.imagenotiright,
-                MusicItemListAdapter.getFlagResIdByCountryName(strCountry));
-
-        // Locate and set the Text into customnotificationtext.xml TextViews
-        remoteViews.setTextViewText(R.id.title, strSongTitle);
-        remoteViews.setTextViewText(R.id.text, strCountry);
-
-        // Create Notification Manager
-        NotificationManager notificationmanager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-        // Build Notification with Notification Manager
-        notificationmanager.notify(0, builder.build());
-
+    private void setPlayPauseImage(Boolean isPlaying) {
+        if(isPlaying) {
+            btnPlayPause.setImageResource(R.drawable.control_pause);
+        } else {
+            btnPlayPause.setImageResource(R.drawable.control_play);
+        }
     }
 }

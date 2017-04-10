@@ -65,7 +65,7 @@ public class MusicItemListAdapter extends ArrayAdapter<JegMusic> {
         viewHolder.txtMusicName.setText(music.getName());
         viewHolder.txtCountry.setText(music.getCountry());
         int duration = music.getLength();
-        viewHolder.txtDuration.setText(String.format("%d:%02d", duration / 60, duration % 60));
+        viewHolder.txtDuration.setText(String.format("%d:%02d", duration / 60000, (duration % 60000) / 1000));
 
         viewHolder.flag.setImageResource(getFlagResIdByCountryName(music.getCountry()));
         //viewHolder.flag.setOnClickListener(this);
