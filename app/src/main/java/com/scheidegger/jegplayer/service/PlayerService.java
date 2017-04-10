@@ -4,6 +4,7 @@ import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
@@ -26,14 +27,10 @@ import com.scheidegger.jegplayer.view.MusicDetail;
 import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 
 public class PlayerService extends Service implements MediaPlayer.OnCompletionListener,
-        MediaPlayer.OnPreparedListener, MediaPlayer.OnErrorListener, MediaPlayer.OnSeekCompleteListener,
-        MediaPlayer.OnInfoListener,
-        AudioManager.OnAudioFocusChangeListener {
+        MediaPlayer.OnPreparedListener, MediaPlayer.OnErrorListener {
 
     private final String TAG = PlayerService.class.getSimpleName();
 
@@ -92,7 +89,7 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
                     break;
                 case MSG_PLAY_MUSIC:
                     Log.i(TAG,"Play " );
-                    playSong(currentMusic);
+                    playSong();
                     break;
                 case MSG_PAUSE_MUSIC:
                     Log.i(TAG,"Pause " );
@@ -158,14 +155,6 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
             try {
                 // Send data as an Integer
                 mClients.get(i).send(Message.obtain(null, MSG_UPDATE_PLAYER_STATUS, intvaluetosend, 0));
-/*
-                //Send data as a String
-                Bundle b = new Bundle();
-                b.putString("str1", "ab" + intvaluetosend + "cd");
-                Message msg = Message.obtain(null, MSG_UPDATE_MUSIC_NAME);
-                msg.setData(b);
-                mClients.get(i).send(msg);
-*/
             }
             catch (RemoteException e) {
                 // The client is dead. Remove it from the list; we are going through the list from back to front so this is safe to do inside the loop.
@@ -183,10 +172,10 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
             mediaPlayer = null;
         }
         updateUIPlayerStatus(PLAYER_ST_STOPPED);
-/*
+
         NotificationManager manager = (NotificationManager) getBaseContext().getSystemService(Context.NOTIFICATION_SERVICE);
-        manager.cancel(0);
-*/
+        manager.cancel(2121);
+
     }
 
     private void playSong(JegMusic currentMusic) {
@@ -225,15 +214,14 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
     }
 
     private void onTimerTick() {
-        Lock lock = new ReentrantLock();
-        lock.lock();
-        if(mediaPlayer!=null) {
-            if (mediaPlayer.isPlaying()) {
-                currentDuration = mediaPlayer.getCurrentPosition();
-                updateElapsedTime();
+        if (mediaPlayer != null) {
+            synchronized(mediaPlayer) {
+                if (mediaPlayer.isPlaying()) {
+                    currentDuration = mediaPlayer.getCurrentPosition();
+                    updateElapsedTime();
+                }
             }
         }
-        lock.unlock();
         if(mClients.size()<=0){
             Log.i(TAG, "" + mClients.size());
             stopForeground(true);
@@ -272,21 +260,6 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
     }
 
     @Override
-    public boolean onInfo(MediaPlayer mp, int what, int extra) {
-        return false;
-    }
-
-    @Override
-    public void onSeekComplete(MediaPlayer mp) {
-
-    }
-
-    @Override
-    public void onAudioFocusChange(int focusChange) {
-
-    }
-
-    @Override
     public void onDestroy() {
         super.onDestroy();
         Toast.makeText(this, "Service Destroyed", Toast.LENGTH_LONG).show();
@@ -309,20 +282,6 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
         intent.putExtra("text", strCountry);
         intent.putExtra("description", music.getDescription());
 
-/*        ////////////
-        TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
-        // Adds the back stack
-        stackBuilder.addParentStack(MusicDetail.class);
-
-        // Adds the Intent to the top of the stack
-        stackBuilder.addNextIntent(intent);
-        // Gets a PendingIntent containing the entire back stack
-        PendingIntent pIntent =
-                stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
-
-
-        //////////
-*/
         // Open NotificationView.java Activity
         PendingIntent pIntent = PendingIntent.getActivity(this, 0, intent,
                 PendingIntent.FLAG_UPDATE_CURRENT);
@@ -336,6 +295,7 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
                 .setAutoCancel(false)
                 // Set PendingIntent into Notification
                 .setContentIntent(pIntent)
+                //Set notification as ongoing
                 .setOngoing(true)
                 // Set RemoteViews into Notification
                 .setContent(remoteViews);

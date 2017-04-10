@@ -12,10 +12,13 @@
     android:orientation="vertical">
 
     <TextView
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/song_list_heading"
-        android:textColor="@android:color/black" />
+        android:textAlignment="center"
+        android:gravity="center"
+        android:textColor="@android:color/black"
+        android:textStyle="bold" />
 
     <ListView
         android:id="@+id/lst_songs"
@@ -25,25 +28,30 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="50dp"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:gravity="bottom">
+
         <TextView
+            android:id="@+id/cur_music_name"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
             android:text="@string/dummy_music_name"
-            android:layout_marginTop="5dp"
             android:textColor="@android:color/black"
-            android:id="@+id/cur_music_name" />
+            android:textStyle="bold" />
+
         <TextView
+            android:id="@+id/cur_music_elapsed"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
             android:text="@string/dummy_music_elapsed"
             android:textColor="@android:color/black"
-            android:layout_marginTop="5dp"
-            android:id="@+id/cur_music_elapsed" />
+            android:textStyle="bold" />
     </LinearLayout>
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="80dp"
         android:gravity="center|bottom"
         android:weightSum="1">
 

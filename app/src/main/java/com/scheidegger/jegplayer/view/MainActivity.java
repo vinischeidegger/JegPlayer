@@ -12,8 +12,11 @@ import android.os.RemoteException;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.ContextMenu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -48,6 +51,29 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     private boolean isPlaying;
     private boolean mIsBound;
 
+    private ServiceConnection mConnection = new ServiceConnection() {
+        public void onServiceConnected(ComponentName className, IBinder service) {
+            Log.i(TAG, "In On-Service-Connected");
+            mService = new Messenger(service);
+            Log.i(TAG, "Service Attached");
+            try {
+                Message msg = Message.obtain(null, PlayerService.MSG_CLIENT_REGISTER);
+                msg.replyTo = mMessenger;
+                mService.send(msg);
+            }
+            catch (RemoteException e) {
+                // In this case the service has crashed before we could even do anything with it
+            }
+        }
+
+        public void onServiceDisconnected(ComponentName className) {
+            Log.i(TAG, "In On-Service-Disconnected");
+            // This is called when the connection with the service has been unexpectedly disconnected - process crashed.
+            mService = null;
+            Toast.makeText(getApplicationContext(), "Service Disconnected.", Toast.LENGTH_SHORT).show();
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -78,6 +104,39 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
         startPlayerService();
 
+        registerForContextMenu(lstSongs);
+    }
+
+    @Override
+    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo)
+    {
+        Log.i(TAG, "In On-Create-Context-Menu");
+        super.onCreateContextMenu(menu, v, menuInfo);
+        menu.setHeaderTitle("Select The Action");
+        menu.add(0, v.getId(), 0, "Play from Start");//groupId, itemId, order, title
+        menu.add(0, v.getId(), 0, "Description");
+    }
+
+    @Override
+    public boolean onContextItemSelected(MenuItem item){
+        AdapterContextMenuInfo info = (AdapterContextMenuInfo) item.getMenuInfo();
+        Log.i(TAG, info.id + " - "+item.getItemId());
+        JegMusic selMusic = getSortedSongList(songList).get((int)info.id);
+
+        if(item.getTitle()=="Play from Start"){
+            playMusicFromService(selMusic);
+            txtMusicName.setText(selMusic.getName());
+        }
+        else if(item.getTitle()=="Description"){
+            Intent intent = new Intent(this, MusicDetail.class);
+            intent.putExtra("title", selMusic.getName());
+            intent.putExtra("text", selMusic.getCountry());
+            intent.putExtra("description", selMusic.getDescription());
+            startActivity(intent);
+        }else{
+            return false;
+        }
+        return true;
     }
 
     @Override
@@ -106,27 +165,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         mIsPlayerServiceRunning = true;
     }
 
-    private ServiceConnection mConnection = new ServiceConnection() {
-        public void onServiceConnected(ComponentName className, IBinder service) {
-            mService = new Messenger(service);
-            Log.i(TAG, "Service Attached");
-            try {
-                Message msg = Message.obtain(null, PlayerService.MSG_CLIENT_REGISTER);
-                msg.replyTo = mMessenger;
-                mService.send(msg);
-            }
-            catch (RemoteException e) {
-                // In this case the service has crashed before we could even do anything with it
-            }
-        }
-
-        public void onServiceDisconnected(ComponentName className) {
-            // This is called when the connection with the service has been unexpectedly disconnected - process crashed.
-            mService = null;
-            Toast.makeText(getApplicationContext(), "Service Disconnected.", Toast.LENGTH_SHORT).show();
-        }
-    };
-
     private void sendMessageToService(int messageId, int arg) {
         if(mIsPlayerServiceRunning) {
             if(mService != null) {
@@ -137,6 +175,8 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                 }
                 catch (RemoteException e) {
                 }
+            } else {
+                Log.i(TAG, "Service is not bound");
             }
         }
     }
@@ -178,6 +218,19 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     private void stopPlayerService() {
         stopService(new Intent(getBaseContext(), PlayerService.class));
     }
+
+    @Override
+    protected void onResume() {
+        Log.i(TAG, "In On-Resume");
+        super.onResume();
+        checkPlayerStatus();
+    }
+
+    private void checkPlayerStatus() {
+        Log.i(TAG, "Checking Player Status");
+        sendMessageToService(PlayerService.MSG_CHECK_PLAYER_STATE, -1);
+    }
+
 
     private List<JegMusic> getSortedSongList(Map<String, JegMusic> map) {
         List<JegMusic> result = new ArrayList<>(map.values());
@@ -240,7 +293,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             Log.i(TAG, "Found Res Id [" + fileResId + "] for " + fileName);
             songList.get(fileName).setResId(fileResId);
         }
-
     }
 
     private void addRecordsToDB() {
@@ -276,7 +328,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         playMusicFromService(soundId);
         playMusicFromService(songList.get(musicName));
         btnPlayPause.setImageResource(R.drawable.control_pause);
-
     }
 
     public void stopMusic() {
@@ -287,11 +338,15 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     @Override
     public void onClick(View clickedView) {
         Log.i(TAG, "in On-Click");
-        String musicName;
+        String musicName = txtMusicName.getText().toString();
         switch (clickedView.getId()) {
             // Play + Pause
             case R.id.btn_play_pause :
-                toggleFromMusicService();
+                if(isPlaying) {
+                    pauseMusicFromService();
+                } else {
+                    continueMusicFromService();
+                }
                 break;
 
             // Stop

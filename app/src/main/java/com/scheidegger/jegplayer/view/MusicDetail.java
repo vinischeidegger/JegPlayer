@@ -5,6 +5,7 @@ import android.support.annotation.StringDef;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.TextView;
 
 import com.scheidegger.jegplayer.R;
 
@@ -22,7 +23,8 @@ public class MusicDetail extends AppCompatActivity {
         String musicName = intent.getStringExtra("title");
         String description = intent.getStringExtra("description");
 
-//        intent.putExtra("text", strCountry);
+        ((TextView)findViewById(R.id.detail_music_name)).setText(musicName);
+        ((TextView)findViewById(R.id.detail_description)).setText(description);
 
         Log.i(TAG, musicName + " - " + description);
     }
