@@ -9,17 +9,25 @@
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
     android:orientation="vertical"
-    tools:context="com.scheidegger.jegplayer.MainActivity">
-
-    <ListView
-        android:id="@+id/lst_songs"
-        android:layout_width="match_parent"
-        android:layout_height="200dp" />
+    tools:context="com.scheidegger.jegplayer.view.MainActivity">
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text=""
+        android:text="@string/song_list_heading"
+        android:textColor="@android:color/black" />
+
+    <ListView
+        android:id="@+id/lst_songs"
+        android:layout_width="match_parent"
+        android:layout_height="300dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/dummy_music_name"
+        android:layout_marginTop="20dp"
+        android:textColor="@android:color/black"
         android:id="@+id/cur_music_name" />
 
     <LinearLayout
@@ -34,7 +42,8 @@
             android:layout_height="60dp"
             android:adjustViewBounds="true"
             android:scaleType="fitCenter"
-            android:src="@drawable/control_previous" />
+            android:src="@drawable/control_previous"
+            android:contentDescription="@string/btn_previous_desc"/>
 
         <ImageButton
             android:id="@+id/btn_play_pause"
@@ -42,7 +51,8 @@
             android:layout_height="60dp"
             android:adjustViewBounds="true"
             android:scaleType="fitCenter"
-            android:src="@drawable/control_play" />
+            android:src="@drawable/control_play"
+            android:contentDescription="@string/btn_play_pause_desc" />
 
         <ImageButton
             android:id="@+id/btn_stop"
@@ -50,7 +60,8 @@
             android:layout_height="60dp"
             android:adjustViewBounds="true"
             android:scaleType="fitCenter"
-            android:src="@drawable/control_stop" />
+            android:src="@drawable/control_stop"
+            android:contentDescription="@string/btn_stop_desc" />
 
         <ImageButton
             android:id="@+id/btn_next"
@@ -58,7 +69,8 @@
             android:layout_height="60dp"
             android:adjustViewBounds="true"
             android:scaleType="fitCenter"
-            android:src="@drawable/control_next" />
+            android:src="@drawable/control_next"
+            android:contentDescription="@string/btn_next_desc" />
 
     </LinearLayout>
 

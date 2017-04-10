@@ -66,6 +66,31 @@ public class MusicItemListAdapter extends ArrayAdapter<JegMusic> {
         viewHolder.txtCountry.setText(music.getCountry());
         int duration = music.getLength();
         viewHolder.txtDuration.setText(String.format("%d:%02d", duration / 60, duration % 60));
+        int flagResId;
+        switch (music.getCountry()) {
+            case "Brazil" :
+                flagResId = R.drawable.flag_brazil;
+                break;
+            case "India" :
+                flagResId = R.drawable.flag_india;
+                break;
+            case "Indonesia" :
+                flagResId = R.drawable.flag_indonesia;
+                break;
+            case "South Korea" :
+                flagResId = R.drawable.flag_south_korea;
+                break;
+            case "USA" :
+                flagResId = R.drawable.flag_usa;
+                break;
+            case "Iceland" :
+                flagResId = R.drawable.flag_iceland;
+                break;
+            default :
+                flagResId = 0;
+                break;
+        }
+        viewHolder.flag.setImageResource(flagResId);
         //viewHolder.flag.setOnClickListener(this);
         //viewHolder.info.setTag(position);
 

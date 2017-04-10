@@ -1,3 +1,14 @@
 <resources>
     <string name="app_name">Jeg Player</string>
+    <string name="song_list_heading">Song List:</string>
+    <string name="dummy_music_name">Music Number One</string>
+    <string name="dummy_music_item">bensoundtheelevatorbossanova</string>
+    <string name="dummy_country">Brazil</string>
+    <string name="length_heading">Length:</string>
+    <string name="dummy_duration">4:00</string>
+    <string name="flag_content_description">Country Flag</string>
+    <string name="btn_previous_desc">Previous</string>
+    <string name="btn_play_pause_desc">Play / Pause</string>
+    <string name="btn_stop_desc">Stop</string>
+    <string name="btn_next_desc">Next</string>
 </resources>

@@ -1,4 +1,4 @@
-package com.scheidegger.jegplayer;
+package com.scheidegger.jegplayer.view;
 
 import android.content.res.Resources;
 import android.media.MediaPlayer;
@@ -7,17 +7,16 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.scheidegger.jegplayer.R;
 import com.scheidegger.jegplayer.controller.DBHandler;
 import com.scheidegger.jegplayer.controller.MusicItemListAdapter;
 import com.scheidegger.jegplayer.model.JegMusic;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
