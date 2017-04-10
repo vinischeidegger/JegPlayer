@@ -420,10 +420,10 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                 case PlayerService.MSG_UPDATE_PLAYER_STATUS:
                     updatePlayerStatus(msg.arg1);
                     break;
-                /*case MyService.MSG_SET_STRING_VALUE:
-                    String str1 = msg.getData().getString("str1");
-                    textStrValue.setText("Str Message: " + str1);
-                    break;*/
+                case PlayerService.MSG_UPDATE_SONG_NAME:
+                    String str1 = msg.obj.toString();
+                    txtMusicName.setText(str1);
+                    break;
                 case PlayerService.MSG_UPDATE_ELAPSED_TIME:
                     updateElapsed(msg.arg1, msg.arg2);
                     break;
